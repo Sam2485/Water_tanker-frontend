@@ -135,7 +135,7 @@ export const DemoSimulationControls = () => {
 
             <DemoButton
               number="5"
-              label="5. Verify OTP Delivery"
+              label="5. Verified OTP Delivery"
               icon={ShieldCheck}
               active={currentStep === 5}
               onClick={runStep5_VerifyOtpAndComplete}

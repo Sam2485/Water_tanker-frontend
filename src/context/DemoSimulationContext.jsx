@@ -1,5 +1,5 @@
 // AquaEquity Hackathon Demo Simulation Controller Context (JavaScript)
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { mockStateManager } from '../services/mockStateManager';
 import { emergencyService } from '../services/emergencyService';
 import { deliveryService } from '../services/deliveryService';
@@ -16,6 +16,7 @@ export const DemoSimulationProvider = ({ children }) => {
 
   const runStep1_CreateCitizenRequest = () => {
     setIsExecuting(true);
+    setCurrentStep(1);
     setLastMessage('Submitting High Priority Citizen Water Request...');
     const req = mockStateManager.createRequest({
       citizenId: 'usr-cit-101',
@@ -31,18 +32,18 @@ export const DemoSimulationProvider = ({ children }) => {
       hasInfantsOrElderly: true,
       notes: 'Storage completely dry. 8 senior citizens in residence.',
     });
-    setCurrentStep(2);
     setIsExecuting(false);
     setLastMessage(`Step 1 Done: Request #${req.id} created with AI Score ${req.priorityScore} (${req.priorityLevel})!`);
+    navigate('/citizen');
   };
 
   const runStep2_AssignTanker = () => {
     setIsExecuting(true);
+    setCurrentStep(2);
     setLastMessage('AI Dispatcher (OR-Tools) selecting nearest optimal tanker...');
     try {
       const assignment = mockStateManager.assignTankerToRequest('REQ-1024', 'tnk-101');
-      setCurrentStep(3);
-      setLastMessage('Step 2 Done: Tanker MH-12-AB-1234 assigned! Diver is en route.');
+      setLastMessage('Step 2 Done: Tanker MH-12-AB-1234 assigned! Driver is en route.');
       navigate(`/citizen/track/${assignment.id}`);
     } catch (e) {
       setLastMessage('Error: ' + e.message);
@@ -53,10 +54,10 @@ export const DemoSimulationProvider = ({ children }) => {
 
   const runStep3_TriggerHospitalEmergency = async () => {
     setIsExecuting(true);
+    setCurrentStep(3);
     setLastMessage('Triggering Hospital Emergency Override at Ruby Hall Clinic...');
     try {
       await emergencyService.triggerOverride('EMG-901');
-      setCurrentStep(4);
       setLastMessage('Step 3 Done: Active tanker redirected to Hospital! Standby Tanker MH-12-CD-5678 assigned as replacement.');
     } catch (e) {
       setLastMessage('Error: ' + e.message);
@@ -67,10 +68,10 @@ export const DemoSimulationProvider = ({ children }) => {
 
   const runStep4_SimulateArrivalAndGeofence = async () => {
     setIsExecuting(true);
+    setCurrentStep(4);
     setLastMessage('Simulating replacement tanker arrival within 50m geofence...');
     try {
       await deliveryService.simulateGeofenceArrival('asg-demo-1');
-      setCurrentStep(5);
       setLastMessage('Step 4 Done: Geofence verified! Tanker arrived at destination.');
       navigate('/citizen/delivery/asg-demo-1');
     } catch (e) {
@@ -82,6 +83,7 @@ export const DemoSimulationProvider = ({ children }) => {
 
   const runStep5_VerifyOtpAndComplete = async () => {
     setIsExecuting(true);
+    setCurrentStep(5);
     setLastMessage('Verifying Delivery OTP (849201) & Water Potability sensor...');
     try {
       const res = await deliveryService.verifyOtp({
@@ -89,7 +91,6 @@ export const DemoSimulationProvider = ({ children }) => {
         otpCode: '849201',
       });
       if (res.success) {
-        setCurrentStep(6);
         setLastMessage('Step 5 Done: OTP Verified! 6,000L dispensed. Delivery completed.');
       } else {
         setLastMessage('OTP verification failed: ' + res.message);
@@ -107,6 +108,11 @@ export const DemoSimulationProvider = ({ children }) => {
     setLastMessage('Demo state reset to initial conditions.');
   };
 
+  const markStep5Verified = () => {
+    setCurrentStep(5);
+    setLastMessage('Step 5 Done: OTP Verified! 6,000L dispensed. Delivery completed.');
+  };
+
   return (
     <DemoSimulationContext.Provider
       value={{
@@ -121,6 +127,7 @@ export const DemoSimulationProvider = ({ children }) => {
         runStep4_SimulateArrivalAndGeofence,
         runStep5_VerifyOtpAndComplete,
         resetSimulation,
+        markStep5Verified,
       }}
     >
       {children}

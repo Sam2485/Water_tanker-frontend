@@ -6,6 +6,7 @@ import { requestService } from '../../services/requestService';
 import { tankerService } from '../../services/tankerService';
 import { deliveryService } from '../../services/deliveryService';
 import { mockStateManager } from '../../services/mockStateManager';
+import { useDemoSimulation } from '../../context/DemoSimulationContext';
 import { GeofenceBadge } from '../../components/common/GeofenceBadge';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -25,6 +26,7 @@ import {
 export const DeliveryVerificationPage = () => {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
+  const { markStep5Verified } = useDemoSimulation();
 
   const [assignment, setAssignment] = useState(null);
   const [request, setRequest] = useState(null);
@@ -82,6 +84,7 @@ export const DeliveryVerificationPage = () => {
       });
       if (res.success) {
         setIsCompleted(true);
+        markStep5Verified();
         loadData();
       } else {
         setMessage(res.message);
