@@ -1,21 +1,32 @@
 // AquaEquity Notification Context (JavaScript)
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { notificationService } from '../services/notificationService';
 
 const NotificationContext = createContext(null);
+
+const getToastSignature = (notification) =>
+  [notification.id, notification.type, notification.title, notification.message, notification.actionUrl].join('|');
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState(() => notificationService.getNotifications());
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeToast, setActiveToast] = useState(null);
+  const shownToastSignatures = useRef(new Set());
 
   useEffect(() => {
     const unsubscribe = notificationService.subscribe((updated) => {
       setNotifications(updated);
-      if (updated.length > 0 && !updated[0].read) {
-        // Pop toast for newest unread notification
-        setActiveToast(updated[0]);
-        setTimeout(() => setActiveToast(null), 6000);
+
+      const newestUnread = updated.find((notification) => !notification.read);
+      if (!newestUnread) {
+        setActiveToast(null);
+        return;
+      }
+
+      const toastSignature = getToastSignature(newestUnread);
+      if (!shownToastSignatures.current.has(toastSignature)) {
+        shownToastSignatures.current.add(toastSignature);
+        setActiveToast(newestUnread);
       }
     });
     return unsubscribe;
@@ -47,7 +58,12 @@ export const NotificationProvider = ({ children }) => {
         closeDrawer,
         markAsRead,
         markAllAsRead,
-        dismissToast: () => setActiveToast(null),
+        dismissToast: () => {
+          if (activeToast) {
+            shownToastSignatures.current.add(getToastSignature(activeToast));
+          }
+          setActiveToast(null);
+        },
       }}
     >
       {children}
